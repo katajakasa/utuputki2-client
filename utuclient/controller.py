@@ -18,8 +18,20 @@ class Controller(object):
         self.player = Player(self.window)
         self.is_running = False
 
+        self.remote_stopped = False
+        self.remote_paused = False
+        self.remote_seek = None
+
     def on_unknown_msg(self, query, data, error):
         log.info("Unknown msg: {}: {}".format(query, data))
+
+    def on_player_msg(self, query, data, error):
+        if error == 1:
+            log.warn("Server responded: {}".format(data['message']))
+            self.close()
+            return
+
+
 
     def on_login_msg(self, query, data, error):
         if error == 1:
@@ -47,6 +59,7 @@ class Controller(object):
                 error = d.get('error', 0) == 1
                 cbs = {
                     'login': self.on_login_msg,
+                    'playerdev': self.on_player_msg,
                     'unknown': self.on_unknown_msg,
                 }
                 cbs[mtype if mtype in cbs else 'unknown'](query, data, error)
@@ -54,6 +67,13 @@ class Controller(object):
                 # Read next
                 d = self.proto.read()
             m += 1
+
+        if self.player.is_stopped():
+            if not self.remote_stopped:
+                self.proto.write_msg('playerdev', {'query': 'next'})
+
+        if self.player.is_paused():
+            pass
 
         # Continue listening
         glib.timeout_add(50, self.run_checks)
