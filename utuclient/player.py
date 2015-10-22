@@ -2,6 +2,9 @@
 
 from gi.repository import GObject as gobject, Gst as gst, Gtk as gtk, GdkX11, GstVideo
 import platform
+import logging
+
+log = logging.getLogger(__name__)
 
 
 class Player(object):

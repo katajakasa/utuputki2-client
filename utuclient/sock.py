@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 
 import websocket
+import logging
+
+log = logging.getLogger(__name__)
 
 
 class Sock(object):

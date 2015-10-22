@@ -2,18 +2,22 @@
 
 import json
 from sock import Sock
+import logging
+
+log = logging.getLogger(__name__)
 
 
 class Protocol(object):
-    def __init__(self, url, token, on_msg=None):
+    def __init__(self, url):
         self.url = url
-        self.token = token
         self.sock = Sock(url)
 
     def write_error(self, mtype, message, code, query=None):
+        if not self.sock:
+            return
         packet = {
             'error': 1,
-            'message': {
+            'data': {
                 'code': code,
                 'message': message,
             },
@@ -24,9 +28,11 @@ class Protocol(object):
         self.sock.write(json.dumps(packet))
 
     def write_msg(self, mtype, data, query=None):
+        if not self.sock:
+            return
         packet = {
             'error': 0,
-            'message': data,
+            'data': data,
             'type': mtype,
         }
         if query:
@@ -34,14 +40,18 @@ class Protocol(object):
         self.sock.write(json.dumps(packet))
 
     def read(self):
+        if not self.sock:
+            return None
+
         d = self.sock.read()
         if d:
             return json.loads(d)
         return None
 
     def close(self):
-        self.sock.close()
-        self.sock = None
+        if self.sock:
+            self.sock.close()
+            self.sock = None
 
 
 
