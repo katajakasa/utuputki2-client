@@ -25,9 +25,9 @@ apt-get install python-gi gir1.2-gstreamer-1.0 gir1.2-gtk-3.0 gir1.2-glib-2.0 \
 
 ### Windows
 
-To get dependencies for Windows, see PyGObjectWin32 project. Make sure that at least gobject, gstreamer, 
-gtk3 and gstreamer plugins packages are selected for installation. In addition, python-websocket needs to be installed,
-for example via pip.
+To get dependencies for Windows, see [PyGObjectWin32](http://sourceforge.net/projects/pygobjectwin32/) project. 
+Make sure that at least gobject, gstreamer, gtk3 and gstreamer plugins packages are selected for installation.
+In addition, python-websocket needs to be installed, for example via pip.
 
 ## License
 
