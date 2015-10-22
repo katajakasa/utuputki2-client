@@ -1,0 +1,5 @@
+# -*- coding: utf-8 -*-
+
+UTUPUTKI_API_URL = 'ws://127.0.0.1:8000/websocket'
+UTUPUTKI_API_TOKEN = ''
+UTUPUTKI_VIDEO_URL = 'http://localhost:8000/video/'
