@@ -18,8 +18,7 @@ class Controller(object):
         self.player = Player(self.window)
         self.is_running = False
 
-        self.remote_stopped = False
-        self.remote_paused = False
+        self.remote_status = 0
         self.remote_seek = None
 
     def on_unknown_msg(self, query, data, error):
@@ -31,7 +30,19 @@ class Controller(object):
             self.close()
             return
 
+        if query == 'set_status':
+            self.remote_status = data.get('status')
+            return
 
+        if query == 'seek':
+            self.remote_seek = data.get('time')
+            return
+
+        if query == 'source':
+            self.player.set_src(data.get('url'))
+            self.remote_status = 1
+            self.player.play()
+            return
 
     def on_login_msg(self, query, data, error):
         if error == 1:
@@ -68,12 +79,19 @@ class Controller(object):
                 d = self.proto.read()
             m += 1
 
-        if self.player.is_stopped():
-            if not self.remote_stopped:
-                self.proto.write_msg('playerdev', {'query': 'next'})
+        # If video is stopped and remote didn't request it, it was probably because the video has ended.
+        if not self.remote_status == 0 and self.player.is_stopped():
+            self.proto.write_msg('playerdev', {'status': 0}, 'status_change')
+        elif self.remote_status != 0 and not self.player.is_stopped():
+            self.player.stop()
 
-        if self.player.is_paused():
-            pass
+        # Check if we need to pause
+        if self.remote_status == 2 and not self.player.is_paused():
+            self.player.pause()
+
+        # If not playing and remote requests it, do so
+        if self.remote_status == 1 and not self.player.is_playing():
+            self.player.play()
 
         # Continue listening
         glib.timeout_add(50, self.run_checks)
