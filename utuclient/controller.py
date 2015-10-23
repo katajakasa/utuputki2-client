@@ -45,7 +45,8 @@ class Controller(object):
 
         # Poke message from server: Something happened on the server that might interest us.
         if query == 'poke':
-            self.remote_poke = True
+            if self.player.status() == 0:
+                self.remote_poke = True
             return
 
         # Sets our status (stopped, playing, paused)
