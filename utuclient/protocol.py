@@ -37,6 +37,7 @@ class Protocol(object):
         }
         if query:
             packet['query'] = query
+        log.info("Writing {}".format(json.dumps(packet)))
         self.sock.write(json.dumps(packet))
 
     def read(self):
@@ -45,6 +46,7 @@ class Protocol(object):
 
         d = self.sock.read()
         if d:
+            log.info("Read {}".format(d))
             return json.loads(d)
         return None
 

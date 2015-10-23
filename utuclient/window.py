@@ -3,17 +3,21 @@
 from gi.repository import Gtk as gtk, GdkX11, GstVideo, Gdk
 import ctypes
 import logging
+import os
 
 log = logging.getLogger(__name__)
 
 
 class Window(object):
-    def __init__(self):
+    def __init__(self, fullscreen):
         # Gtk window
         self.window = gtk.Window()
         self.window.connect('destroy', self.on_window_destroy)
         self.window.set_title("Utuputki")
-        self.window.fullscreen()
+        if fullscreen:
+            self.window.fullscreen()
+        else:
+            self.window.resize(1280, 720)
 
         # Drawing area
         self.area = gtk.DrawingArea()

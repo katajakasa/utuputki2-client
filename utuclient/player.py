@@ -8,12 +8,13 @@ log = logging.getLogger(__name__)
 
 
 class Player(object):
-    def __init__(self, window):
+    def __init__(self, window, cb_finish):
         self.fd = None
         self.window = window
 
         # The play binary pipeline
-        self.pipeline = gst.ElementFactory.make("playbin2", None)
+        self.pipeline = gst.ElementFactory.make("playbin", "player")
+        self.pipeline.connect("about-to-finish", cb_finish)
 
         # Sink
         if platform.system() == "Windows":
@@ -42,13 +43,22 @@ class Player(object):
         self.pipeline.set_state(gst.State.PAUSED)
 
     def is_stopped(self):
-        return not self.pipeline.get_state(gst.State.PLAYING)
+        return self.pipeline.get_state(gst.CLOCK_TIME_NONE)[1] == gst.State.NULL
 
     def is_playing(self):
-        return self.pipeline.get_state(gst.State.PLAYING)
+        return self.pipeline.get_state(gst.CLOCK_TIME_NONE)[1] == gst.State.PLAYING
 
     def is_paused(self):
-        return self.pipeline.get_state(gst.State.PAUSED)
+        return self.pipeline.get_state(gst.CLOCK_TIME_NONE)[1] == gst.State.PAUSED
+
+    def status(self):
+        if self.is_stopped():
+            return 0
+        if self.is_playing():
+            return 1
+        if self.is_paused():
+            return 2
+        return None
 
     def seek(self, seconds):
         self.pipeline.seek_simple(gst.Format.TIME,

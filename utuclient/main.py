@@ -36,7 +36,7 @@ if __name__ == "__main__":
     log.info("Starting up.")
     c = Controller(config.UTUPUTKI_API_URL,
                    config.UTUPUTKI_API_TOKEN,
-                   config.UTUPUTKI_VIDEO_URL)
+                   config.FULLSCREEN)
 
     signal.signal(signal.SIGINT, signal.SIG_DFL)
     c.run()
