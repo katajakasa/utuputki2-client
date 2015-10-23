@@ -12,8 +12,7 @@ log = logging.getLogger(__name__)
 
 class Controller(object):
     def __init__(self, url, token, fullscreen):
-        self.proto = Protocol(url)
-        self.proto.write_msg('login', {'token': token})
+        self.proto = Protocol(url, token)
         self.window = Window(fullscreen)
         self.player = Player(self.window, self.player_finished)
 
@@ -23,6 +22,7 @@ class Controller(object):
         self.remote_source = None
         self.remote_poke = False
         self.waiting = True
+        self.first_connect = True
 
     def player_finished(self, player):
         self.remote_poke = True
@@ -78,7 +78,11 @@ class Controller(object):
         log.info("Logged in as {}".format(data['name']))
 
         # Send initial status
-        self.write_status(0, True)
+        if self.first_connect:
+            self.write_status(0, True)
+        else:
+            self.write_status(self.player.status())
+        self.first_connect = False
 
     def run_checks(self):
         if not self.is_running:

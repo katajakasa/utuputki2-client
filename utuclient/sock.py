@@ -8,8 +8,12 @@ log = logging.getLogger(__name__)
 
 class Sock(object):
     def __init__(self, url):
+        self.url = url
         self.ws = websocket.WebSocket()
         self.ws.connect(url)
+
+    def reconnect(self):
+        self.ws.connect(self.url)
 
     def read(self):
         self.ws.sock.settimeout(0.1)
