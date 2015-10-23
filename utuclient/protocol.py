@@ -51,7 +51,7 @@ class Protocol(object):
         }
         if query:
             packet['query'] = query
-        log.info("Writing {}".format(json.dumps(packet)))
+        log.info(u"Writing {}".format(json.dumps(packet)))
 
         try:
             self.sock.write(json.dumps(packet))
@@ -69,7 +69,7 @@ class Protocol(object):
             self.reconnect()
 
         if d:
-            log.info("Read {}".format(d))
+            log.info(u"Read {}".format(d))
             return json.loads(d)
         return None
 
