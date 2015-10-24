@@ -80,6 +80,8 @@ class Controller(object):
         if not self.is_running:
             return
 
+        timeout = 100
+
         # Handle incoming messages
         d = self.proto.read()
 
@@ -101,18 +103,6 @@ class Controller(object):
                 # Read next
                 d = self.proto.read()
 
-        # Poke the server back, hard. MAKE it give us videos.
-        if self.got_poke:
-            self.got_poke = False
-
-            # If we are stopped currently, and we're not going to start anything, send status
-            if self.to_status == 0 and self.current_status == 0:
-                self.write_status(self.current_status)
-
-                # Timeout and quit here. We're waiting.
-                glib.timeout_add(1000, self.run_checks)
-                return
-
         # If we are settings a remote source, go ahead
         if self.source_to and self.to_status == 1:
             # If we are currently playing, stop.
@@ -133,14 +123,25 @@ class Controller(object):
             self.source_to = None
 
             # Timeout and quit here. We're waiting.
-            glib.timeout_add(1000, self.run_checks)
-            return
+            timeout = 1000
+
+        # Poke the server back, hard. MAKE it give us videos.
+        if self.got_poke:
+            self.got_poke = False
+
+            # If we are stopped currently, and we're not going to start anything, send status
+            if self.to_status == 0 and self.current_status == 0:
+                self.write_status(self.current_status)
+
+                # Timeout. We're waiting.
+                timeout = 1000
 
         # If we need to seek, do so now. Only when paused or playing.
         if self.current_status != 0 and self.seek_to:
             self.player.seek(self.seek_to)
             log.info(u"Seeking to %d", self.seek_to)
             self.seek_to = None
+            timeout = 100
 
         # Check if we need to stop
         if self.current_status != 0 and self.to_status == 0:
@@ -150,6 +151,7 @@ class Controller(object):
             self.write_status(0)
             self.current_status = 0
             self.player = None
+            timeout = 100
             log.info(u"Status = Stopped")
 
         # Check if we need to pause
@@ -157,6 +159,7 @@ class Controller(object):
             self.player.pause()
             self.write_status(2)
             self.current_status = 2
+            timeout = 100
             log.info(u"Status = Paused")
 
         # If not playing and remote requests it, do so
@@ -164,10 +167,11 @@ class Controller(object):
             self.player.play()
             self.write_status(1)
             self.current_status = 1
+            timeout = 100
             log.info(u"Status = Playing")
 
         # Continue listening
-        glib.timeout_add(100, self.run_checks)
+        glib.timeout_add(timeout, self.run_checks)
 
     def run(self):
         self.is_running = True
