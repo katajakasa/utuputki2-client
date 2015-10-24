@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import gi
+gi.require_version("Gst", "1.0")
 import logging
 import sys
 import signal
@@ -17,6 +18,11 @@ except ImportError:
 
 
 if __name__ == "__main__":
+    # Init GTK stuff
+    glib.threads_init()
+    gobject.threads_init()
+    gst.init(None)
+
     # Set up the global log
     log_format = '[%(asctime)s] %(message)s'
     log_datefmt = '%d.%m.%Y %I:%M:%S'
@@ -25,12 +31,6 @@ if __name__ == "__main__":
                         format=log_format,
                         datefmt=log_datefmt)
     log = logging.getLogger(__name__)
-
-    # Init GTK stuff
-    gi.require_version("Gst", "1.0")
-    glib.threads_init()
-    gobject.threads_init()
-    gst.init(None)
 
     # Our own stuff
     log.info("Starting up.")

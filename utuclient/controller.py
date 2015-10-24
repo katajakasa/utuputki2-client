@@ -14,59 +14,54 @@ class Controller(object):
     def __init__(self, url, token, fullscreen):
         self.proto = Protocol(url, token)
         self.window = Window(fullscreen)
-        self.player = Player(self.window, self.player_finished)
+        self.player = None
 
         self.is_running = False
-        self.remote_status = 0
-        self.remote_seek = None
-        self.remote_source = None
-        self.remote_poke = False
-        self.waiting = True
-        self.first_connect = True
+        self.to_status = 0
+        self.current_status = 0
+        self.got_poke = False
 
-    def player_finished(self, player):
-        self.remote_poke = True
+        self.seek_to = None
+        self.source_to = None
+
+    def player_finished(self):
+        self.to_status = 0
+        self.player = None
+
+    def player_error(self, error):
+        self.to_status = 0
+        self.player = None
 
     def on_unknown_msg(self, query, data, error):
-        log.info("Unknown msg: {}: {}".format(query, data))
+        log.info(u"Unknown msg: {}: {}".format(query, data))
 
-    def write_status(self, status, end=False):
-        msg = {'status': status}
-        if end:
-            msg['end'] = True
-        self.proto.write_msg('playerdev', msg, 'status_change')
+    def write_status(self, status):
+        self.proto.write_msg('playerdev', {'status': status}, 'status_change')
 
     def on_player_msg(self, query, data, error):
         if error == 1:
             log.warn("Server responded: {}".format(data['message']))
             return
 
-        self.waiting = False
-
         # Poke message from server: Something happened on the server that might interest us.
         if query == 'poke':
-            if self.player.status() == 0:
-                self.remote_poke = True
+            self.got_poke = True
             return
 
         # Sets our status (stopped, playing, paused)
         if query == 'set_status':
-            self.remote_status = data.get('status')
-            return
-
-        # Returns our status
-        if query == 'get_status':
-            self.write_status(self.player.status())
+            self.to_status = data.get('status')
             return
 
         # Seek to position (in seconds)
         if query == 'seek':
-            self.remote_seek = data.get('time')
+            self.seek_to = data.get('time')
             return
 
         # Set our video source
         if query == 'source':
-            self.remote_source = data.get('url')
+            self.source_to = data.get('url')
+            self.to_status = 1
             return
 
     def on_login_msg(self, query, data, error):
@@ -79,22 +74,17 @@ class Controller(object):
         log.info("Logged in as {}".format(data['name']))
 
         # Send initial status
-        if self.first_connect:
-            self.write_status(0, True)
-        else:
-            self.write_status(self.player.status())
-        self.first_connect = False
+        self.write_status(self.current_status)
 
     def run_checks(self):
         if not self.is_running:
             return
 
         # Handle incoming messages
-        m = 0
         d = self.proto.read()
 
-        # Only handle a few packages at a time, and only if the previous package returns something.
-        while m < 10 and d:
+        # Handle all the messages on queue
+        while d:
             if d:
                 # Handle this message
                 mtype = d.get('type', 'unknown')
@@ -110,59 +100,74 @@ class Controller(object):
 
                 # Read next
                 d = self.proto.read()
-            m += 1
+
+        # Poke the server back, hard. MAKE it give us videos.
+        if self.got_poke:
+            self.got_poke = False
+
+            # If we are stopped currently, and we're not going to start anything, send status
+            if self.to_status == 0 and self.current_status == 0:
+                self.write_status(self.current_status)
+
+                # Timeout and quit here. We're waiting.
+                glib.timeout_add(1000, self.run_checks)
+                return
 
         # If we are settings a remote source, go ahead
-        if self.remote_source:
-            if self.player.is_playing():
+        if self.source_to and self.to_status == 1:
+            # If we are currently playing, stop.
+            if self.current_status != 0 and self.player:
                 self.player.stop()
-
-            # Set up a new player
-            self.player.set_src(self.remote_source)
-            self.player.play()
+                self.player = None
 
             # Set up statuses
-            self.waiting = False
-            self.remote_status = 1
-            self.write_status(1)
+            self.current_status = 1
+            self.write_status(self.current_status)
+
+            # Set up a new player
+            self.player = Player(self.window, self.source_to, self.player_finished, self.player_error)
+            self.player.play()
 
             # Log and clear remote op
-            log.info("Switching to {}".format(self.remote_source))
-            self.remote_source = None
-            self.remote_poke = False
-        elif self.remote_poke:
-            log.info("Poked.")
-            self.write_status(0, True)
-            self.remote_poke = False
+            log.info(u"Switching to {}".format(self.source_to))
+            self.source_to = None
 
-        # If we need to seek, do so now
-        if (self.player.is_playing() or self.player.is_paused()) and self.remote_seek:
-            self.player.seek(self.remote_seek)
-            log.info("Seeking to {}".format(self.remote_source))
-            self.remote_seek = None
+            # Timeout and quit here. We're waiting.
+            glib.timeout_add(1000, self.run_checks)
+            return
 
-        # If we are not resting, do something ...
-        if not self.waiting:
-            # If video is stopped and remote didn't request it, it was probably because the video has ended.
-            if self.remote_status == 0 and not self.player.is_stopped():
+        # If we need to seek, do so now. Only when paused or playing.
+        if self.current_status != 0 and self.seek_to:
+            self.player.seek(self.seek_to)
+            log.info(u"Seeking to %d", self.seek_to)
+            self.seek_to = None
+
+        # Check if we need to stop
+        if self.current_status != 0 and self.to_status == 0:
+            if self.player:
                 self.player.stop()
-                self.write_status(0)
-                log.info("Status = Stopped")
+                self.player = None
+            self.write_status(0)
+            self.current_status = 0
+            self.player = None
+            log.info(u"Status = Stopped")
 
-            # Check if we need to pause
-            if self.remote_status == 2 and not self.player.is_paused():
-                self.player.pause()
-                self.write_status(2)
-                log.info("Status = Paused")
+        # Check if we need to pause
+        if self.current_status == 1 and self.to_status == 2:
+            self.player.pause()
+            self.write_status(2)
+            self.current_status = 2
+            log.info(u"Status = Paused")
 
-            # If not playing and remote requests it, do so
-            if self.remote_status == 1 and not self.player.is_playing():
-                self.player.play()
-                self.write_status(1)
-                log.info("Status = Playing")
+        # If not playing and remote requests it, do so
+        if self.current_status != 1 and self.to_status == 1 and self.player:
+            self.player.play()
+            self.write_status(1)
+            self.current_status = 1
+            log.info(u"Status = Playing")
 
         # Continue listening
-        glib.timeout_add(50, self.run_checks)
+        glib.timeout_add(100, self.run_checks)
 
     def run(self):
         self.is_running = True

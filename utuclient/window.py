@@ -19,10 +19,22 @@ class Window(object):
         else:
             self.window.resize(1280, 720)
 
+        self.box1 = gtk.HBox()
+        self.window.add(self.box1)
+
         # Drawing area
         self.area = gtk.DrawingArea()
-        self.window.add(self.area)
+        self.box1.add(self.area)
 
+        # Get the ad image
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        self.image = gtk.Image()
+        self.image.set_from_file(os.path.join(base_dir, "resources/standby.png"))
+
+        # Set up
+        self.box1.show()
+        self.image.show()
+        self.area.show()
         self.window.show_all()
         self.open = True
 
