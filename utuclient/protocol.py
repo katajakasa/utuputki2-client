@@ -4,6 +4,7 @@ import json
 from sock import Sock
 import logging
 import socket
+from websocket import WebSocketConnectionClosedException
 
 log = logging.getLogger(__name__)
 
@@ -40,6 +41,8 @@ class Protocol(object):
             self.sock.write(json.dumps(packet))
         except socket.error:
             self.reconnect()
+        except WebSocketConnectionClosedException:
+            self.reconnect()
 
     def write_msg(self, mtype, data, query=None):
         if not self.sock:
@@ -57,6 +60,8 @@ class Protocol(object):
             self.sock.write(json.dumps(packet))
         except socket.error:
             self.reconnect()
+        except WebSocketConnectionClosedException:
+            self.reconnect()
 
     def read(self):
         if not self.sock:
@@ -66,6 +71,8 @@ class Protocol(object):
         try:
             d = self.sock.read()
         except socket.error:
+            self.reconnect()
+        except WebSocketConnectionClosedException:
             self.reconnect()
 
         if d:
