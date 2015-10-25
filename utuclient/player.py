@@ -3,14 +3,18 @@
 from gi.repository import GObject as gobject, Gst as gst, Gtk as gtk, GdkX11, GstVideo
 import platform
 import logging
+import os
 
 log = logging.getLogger(__name__)
 
 
 class Player(object):
-    def __init__(self, window, url, cb_finish, cb_error):
-        self.fd = None
+    VIDEO = 0
+    IMAGE = 1
+
+    def __init__(self, window, url, cb_finish, cb_error, mode=VIDEO):
         self.window = window
+        self.mode = mode
         self.url = url
         self.cb_finish = cb_finish
         self.cb_error = cb_error
@@ -27,11 +31,18 @@ class Player(object):
             self.sink.set_property('force-aspect-ratio', True)
         self.pipeline.set_property('video-sink', self.sink)
 
+        # Handle image stuff
+        if mode == Player.IMAGE:
+            self.freeze = gst.ElementFactory.make("imagefreeze", "freeze")
+            self.pipeline.add(self.freeze)
+        else:
+            self.freeze = None
+
         # Add signal handler
-        bus = self.pipeline.get_bus()
-        bus.connect('message::eos', self.handle_eos)
-        bus.connect('message::error', self.handle_error)
-        bus.add_signal_watch()
+        self.bus = self.pipeline.get_bus()
+        self.bus.connect('message::eos', self.handle_eos)
+        self.bus.connect('message::error', self.handle_error)
+        self.bus.add_signal_watch()
 
         # Find the correct window handle and set it as base drawing area for the video sink
         if platform.system() == "Windows":
@@ -51,10 +62,6 @@ class Player(object):
         log.info(u"End of stream")
         self.cb_finish()
 
-    @staticmethod
-    def my_handler(bus, message):
-        log.info(u"%s %s %s", message.src, message.type)
-
     def play(self):
         self.pipeline.set_state(gst.State.PLAYING)
 
@@ -72,6 +79,10 @@ class Player(object):
 
     def is_paused(self):
         return self.pipeline.get_state(gst.CLOCK_TIME_NONE)[1] == gst.State.PAUSED
+
+    def close(self):
+        self.stop()
+        self.bus.remove_signal_watch()
 
     def status(self):
         if self.is_stopped():

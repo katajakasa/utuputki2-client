@@ -14,7 +14,6 @@ class Controller(object):
     def __init__(self, url, token, fullscreen):
         self.proto = Protocol(url, token)
         self.window = Window(fullscreen)
-        self.player = None
 
         self.is_running = False
         self.to_status = 0
@@ -24,13 +23,22 @@ class Controller(object):
         self.seek_to = None
         self.source_to = None
 
+        # Get the ad image
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        self.stopped_image_url = "file://"+os.path.join(base_dir, "resources/standby.png")
+
+        # Show image at start
+        self.player = Player(self.window,
+                             self.stopped_image_url,
+                             self.player_finished,
+                             self.player_error,
+                             mode=Player.IMAGE)
+
     def player_finished(self):
         self.to_status = 0
-        self.player = None
 
     def player_error(self, error):
         self.to_status = 0
-        self.player = None
 
     def on_unknown_msg(self, query, data, error):
         log.info(u"Unknown msg: {}: {}".format(query, data))
@@ -106,9 +114,8 @@ class Controller(object):
         # If we are settings a remote source, go ahead
         if self.source_to and self.to_status == 1:
             # If we are currently playing, stop.
-            if self.current_status != 0 and self.player:
-                self.player.stop()
-                self.player = None
+            if self.player:
+                self.player.close()
 
             # Set up statuses
             self.current_status = 1
@@ -146,11 +153,15 @@ class Controller(object):
         # Check if we need to stop
         if self.current_status != 0 and self.to_status == 0:
             if self.player:
-                self.player.stop()
-                self.player = None
+                self.player.close()
+            log.info("sdfsdf")
             self.write_status(0)
             self.current_status = 0
-            self.player = None
+            self.player = Player(self.window,
+                                 self.stopped_image_url,
+                                 self.player_finished,
+                                 self.player_error,
+                                 mode=Player.IMAGE)
             timeout = 100
             log.info(u"Status = Stopped")
 
@@ -182,7 +193,7 @@ class Controller(object):
         if self.is_running:
             self.is_running = False
             if self.player:
-                self.player.stop()
+                self.player.close()
             self.window.close()
             self.proto.close()
 
