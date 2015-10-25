@@ -26,6 +26,7 @@ class Controller(object):
         # Get the ad image
         base_dir = os.path.dirname(os.path.abspath(__file__))
         self.stopped_image_url = "file://"+os.path.join(base_dir, "resources/standby.png")
+        self.maintenance_image_url = "file://"+os.path.join(base_dir, "resources/maintenance.png")
 
         # Show image at start
         self.player = Player(self.window,
@@ -35,10 +36,12 @@ class Controller(object):
                              mode=Player.IMAGE)
 
     def player_finished(self):
-        self.to_status = 0
+        if self.to_status != 4:
+            self.to_status = 0
 
     def player_error(self, error):
-        self.to_status = 0
+        if self.to_status != 4:
+            self.to_status = 0
 
     def on_unknown_msg(self, query, data, error):
         log.info(u"Unknown msg: {}: {}".format(query, data))
@@ -148,13 +151,11 @@ class Controller(object):
             self.player.seek(self.seek_to)
             log.info(u"Seeking to %d", self.seek_to)
             self.seek_to = None
-            timeout = 100
 
         # Check if we need to stop
         if self.current_status != 0 and self.to_status == 0:
             if self.player:
                 self.player.close()
-            log.info("sdfsdf")
             self.write_status(0)
             self.current_status = 0
             self.player = Player(self.window,
@@ -162,7 +163,6 @@ class Controller(object):
                                  self.player_finished,
                                  self.player_error,
                                  mode=Player.IMAGE)
-            timeout = 100
             log.info(u"Status = Stopped")
 
         # Check if we need to pause
@@ -170,16 +170,39 @@ class Controller(object):
             self.player.pause()
             self.write_status(2)
             self.current_status = 2
-            timeout = 100
             log.info(u"Status = Paused")
 
-        # If not playing and remote requests it, do so
-        if self.current_status != 1 and self.to_status == 1 and self.player:
+        # If paused and remote requests start, do so
+        elif self.current_status == 2 and self.to_status == 1 and self.player:
             self.player.play()
             self.write_status(1)
             self.current_status = 1
-            timeout = 100
             log.info(u"Status = Playing")
+
+        # If stopped and remote requests start, do so
+        elif self.current_status == 0 and self.to_status == 1:
+            self.write_status(0)
+            self.current_status = 0
+            log.info(u"Status = Stopped")
+
+        # If maintenance and remote requests start, do so
+        elif self.current_status == 4 and self.to_status == 1:
+            self.write_status(0)
+            self.current_status = 0
+            log.info(u"Status = Stopped")
+
+        # Maintenance
+        if self.current_status != 4 and self.to_status == 4:
+            if self.player:
+                self.player.close()
+            self.write_status(4)
+            self.current_status = 4
+            self.player = Player(self.window,
+                                 self.maintenance_image_url,
+                                 self.player_finished,
+                                 self.player_error,
+                                 mode=Player.IMAGE)
+            timeout = 100
 
         # Continue listening
         glib.timeout_add(timeout, self.run_checks)
