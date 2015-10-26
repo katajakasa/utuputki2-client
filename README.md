@@ -12,14 +12,14 @@ Utuputki2-client is a really simple Python/GTK/GStreamer client for utuputki. It
    sure the access token is set (You can get this via the tools module in Utuputki2 server!).
 4. Start client `python -m utuclient.main`
 
-## 2.1. Requirements
+### 2.1. Requirements
 
 * websocket-client (`pip install websocket-client`)
 * PyGObject
 * GTK+ 3
 * GStreamer (remember to install codec support!)
 
-## 2.2. Debian
+### 2.2. Debian
 
 Make sure you have ALL the plugins installed! You may need to add restricted repositoried or such to get everything.
 
@@ -29,7 +29,7 @@ apt-get install python-gi gir1.2-gstreamer-1.0 gir1.2-gtk-3.0 gir1.2-glib-2.0 \
         gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly python-websocket
 ```
 
-## 2.3. Windows
+### 2.3. Windows
 
 To get dependencies for Windows, see [PyGObjectWin32](http://sourceforge.net/projects/pygobjectwin32/) project. 
 Make sure that at least gobject, gstreamer, gtk3 and gstreamer plugins packages are selected for installation.
