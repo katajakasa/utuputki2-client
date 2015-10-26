@@ -29,7 +29,7 @@ apt-get install python-gi gir1.2-gstreamer-1.0 gir1.2-gtk-3.0 gir1.2-glib-2.0 \
         gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly python-websocket
 ```
 
-### 2.3. Windows
+## 2.3. Windows
 
 To get dependencies for Windows, see [PyGObjectWin32](http://sourceforge.net/projects/pygobjectwin32/) project. 
 Make sure that at least gobject, gstreamer, gtk3 and gstreamer plugins packages are selected for installation.
