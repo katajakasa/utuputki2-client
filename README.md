@@ -2,7 +2,7 @@
 
 ## 1. What is it ?
 
-Utuputki2-client is a really simple Python/GTK/GStreamer client for utuputki. It uses websockets to connect the server.
+Utuputki2-client is a really simple client for utuputki. It uses websockets to connect to the server and then shows videos from the queue in order in a GTK/GStreamer window.
 
 ## 2. Installation
 
