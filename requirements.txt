@@ -1,0 +1,3 @@
+# Note that this is not a full requirements list. Please consult README.md for details!
+websocket-client
+
