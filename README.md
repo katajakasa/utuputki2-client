@@ -1,5 +1,7 @@
 # Utuputki2-client
 
+[![Code Health](https://landscape.io/github/katajakasa/utuputki2-client/master/landscape.svg?style=flat)](https://landscape.io/github/katajakasa/utuputki2-client/master)
+
 ## 1. What is it ?
 
 Utuputki2-client is a really simple client for utuputki. It uses websockets to connect to the server and then shows videos from the queue in order in a GTK/GStreamer window.
