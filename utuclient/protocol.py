@@ -21,9 +21,9 @@ class Protocol(object):
             self.sock.reconnect()
             self.write_msg('login', {'token': self.token})
         except socket.error:
-            log.warn("Reconnect failed ...")
+            log.warn(u"Reconnect failed ...")
         except WebSocketException:
-            log.warn("Reconnect failed ...")
+            log.warn(u"Reconnect failed ...")
 
     def write_error(self, mtype, message, code, query=None):
         if not self.sock:
@@ -45,7 +45,7 @@ class Protocol(object):
             self.reconnect()
         except WebSocketException, e:
             self.reconnect()
-            log.info("Connection error: %s", str(e))
+            log.info(u"Connection error: %s", str(e))
 
     def write_msg(self, mtype, data, query=None):
         if not self.sock:
@@ -57,7 +57,7 @@ class Protocol(object):
         }
         if query:
             packet['query'] = query
-        log.info(u"Writing {}".format(json.dumps(packet)))
+        log.info(u"Writing %s", json.dumps(packet))
 
         try:
             self.sock.write(json.dumps(packet))
@@ -65,7 +65,7 @@ class Protocol(object):
             self.reconnect()
         except WebSocketException, e:
             self.reconnect()
-            log.info("Connection error: %s", str(e))
+            log.info(u"Connection error: %s", str(e))
 
     def read(self):
         if not self.sock:
@@ -78,10 +78,10 @@ class Protocol(object):
             self.reconnect()
         except WebSocketException, e:
             self.reconnect()
-            log.info("Connection error: %s", str(e))
+            log.info(u"Connection error: %s", str(e))
 
         if d:
-            log.info(u"Read {}".format(d))
+            log.info(u"Read %s", d)
             return json.loads(d)
         return None
 

@@ -33,7 +33,7 @@ if __name__ == "__main__":
     log = logging.getLogger(__name__)
 
     # Our own stuff
-    log.info("Starting up.")
+    log.info(u"Starting up.")
     c = Controller(config.UTUPUTKI_API_URL,
                    config.UTUPUTKI_API_TOKEN,
                    config.FULLSCREEN)
@@ -42,5 +42,5 @@ if __name__ == "__main__":
     c.run()
     c.close()
 
-    log.info("All done.")
+    log.info(u"All done.")
     exit(0)

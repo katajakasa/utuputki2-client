@@ -25,8 +25,10 @@ class Controller(object):
 
         # Get the ad image
         base_dir = os.path.dirname(os.path.abspath(__file__))
-        self.stopped_image_url = "file://"+os.path.join(base_dir, "resources/standby.png")
-        self.maintenance_image_url = "file://"+os.path.join(base_dir, "resources/maintenance.png")
+        resources = '{}{}{}{}'.format(base_dir, os.sep, "resources", os.sep)
+        self.stopped_image_url = 'file:///{}'.format(os.path.join(resources, "standby.png"))
+        self.maintenance_image_url = 'file:///{}'.format(os.path.join(resources, "maintenance.png"))
+        print self.stopped_image_url
 
         # Show image at start
         self.player = Player(self.window,
@@ -44,14 +46,14 @@ class Controller(object):
             self.to_status = 0
 
     def on_unknown_msg(self, query, data, error):
-        log.info(u"Unknown msg: {}: {}".format(query, data))
+        log.info(u"Unknown msg: %s: %s (%s)", query, data, error)
 
     def write_status(self, status):
         self.proto.write_msg('playerdev', {'status': status}, 'status_change')
 
     def on_player_msg(self, query, data, error):
         if error == 1:
-            log.warn("Server responded: {}".format(data['message']))
+            log.warn(u"Server responded: %s", data['message'])
             return
 
         # Poke message from server: Something happened on the server that might interest us.
@@ -77,12 +79,12 @@ class Controller(object):
 
     def on_login_msg(self, query, data, error):
         if error == 1:
-            log.warn("Server responded: {}".format(data['message']))
+            log.warn(u"Server responded: %s", data['message'])
             self.close()
             return
 
         # Okay, we got in. Let's get on with it.
-        log.info("Logged in as {}".format(data['name']))
+        log.info(u"Logged in as %s", data['name'])
 
         # Send initial status
         self.write_status(self.current_status)
@@ -129,7 +131,7 @@ class Controller(object):
             self.player.play()
 
             # Log and clear remote op
-            log.info(u"Switching to {}".format(self.source_to))
+            log.info(u"Switching to %s", self.source_to)
             self.source_to = None
 
             # Timeout and quit here. We're waiting.

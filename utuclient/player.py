@@ -3,7 +3,6 @@
 from gi.repository import GObject as gobject, Gst as gst, Gtk as gtk, GdkX11, GstVideo
 import platform
 import logging
-import os
 
 log = logging.getLogger(__name__)
 
@@ -55,7 +54,7 @@ class Player(object):
 
     def handle_error(self, bus, msg):
         error = msg.parse_error()[1]
-        log.warn(u"Caught error {0}".format(error))
+        log.warn(u"Caught error %s", error)
         self.cb_error(error)
 
     def handle_eos(self, bus, msg):
