@@ -28,7 +28,6 @@ class Controller(object):
         resources = '{}{}{}{}'.format(base_dir, os.sep, "resources", os.sep)
         self.stopped_image_url = 'file:///{}'.format(os.path.join(resources, "standby.png"))
         self.maintenance_image_url = 'file:///{}'.format(os.path.join(resources, "maintenance.png"))
-        print self.stopped_image_url
 
         # Show image at start
         self.player = Player(self.window,
